@@ -3,9 +3,9 @@ from flask_restx import Api, Resource
 import sidrapy
 import pandas as pd
 
+# Cria a aplicação Flask
 app = Flask(__name__)
 api = Api(app, version="1.0", title="IPCA API", description="API para cálculo e consulta de IPCA")
-
 
 # Função para obter e processar os dados
 def process_ipca_data():
@@ -41,10 +41,8 @@ def process_ipca_data():
     ipca['Mes-ano'] = pd.to_datetime(ipca['date'], format='%d/%m/%Y').dt.to_period('M').astype(str)
     return ipca
 
-
 # Define o namespace
 ns = api.namespace("ipca", description="Operações relacionadas ao IPCA")
-
 
 # Recurso para retornar apenas "Var. mensal (%)" e a data formatada
 @ns.route("/mensal")
@@ -57,6 +55,19 @@ class IPCAVarMensal(Resource):
         result = ipca_data[['variable', 'value', 'date', 'Mes-ano']].to_dict(orient="records")
         return jsonify(result)
 
+# Handler para o Vercel
+def vercel_handler(request):
+    from flask import request as flask_request
+    with app.app_context():
+        return app.full_dispatch_request(flask_request)
 
+# Ponto de entrada para o Vercel
 if __name__ == "__main__":
     app.run(debug=True)
+else:
+    # Configuração para o Vercel
+    from flask import request
+    import os
+    from flask import Flask
+    app = Flask(__name__)
+    api.init_app(app)
